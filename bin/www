@@ -6,7 +6,6 @@
 
 var app = require('../app');
 var debug = require('debug')('iiif-express:server');
-var http = require('http');
 
 /**
  * Get port from environment and store in Express.
@@ -19,7 +18,21 @@ app.set('port', port);
  * Create HTTP server.
  */
 
-var server = http.createServer(app);
+var server = createServer();
+
+function createServer() {
+  if (process.env.SSL_CERT && process.env.SSL_KEY) {
+    var fs = require('fs');
+    var https = require('https');
+    return https.createServer({
+      key: fs.readFileSync(process.env.SSL_KEY),
+      cert: fs.readFileSync(process.env.SSL_CERT)
+    }, app);
+  } else {
+    var http = require('http');
+    return http.createServer(app);
+  }
+}
 
 /**
  * Listen on provided port, on all network interfaces.
