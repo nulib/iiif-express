@@ -1,5 +1,4 @@
 FROM node:13-alpine
-MAINTAINER Michael B. Klein
 RUN apk add curl
 COPY --chown=node:node . /var/app
 USER node
