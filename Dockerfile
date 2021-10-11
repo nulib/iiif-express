@@ -1,9 +1,9 @@
-FROM node:13-alpine
+FROM node:14-alpine
 RUN apk add curl
 COPY --chown=node:node . /var/app
 USER node
 WORKDIR /var/app
-RUN yarn install
-CMD yarn start
+RUN npm install
+CMD npm run-script start
 EXPOSE 3000
 HEALTHCHECK CMD curl http://localhost:3334/auth/whoami
