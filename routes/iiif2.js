@@ -2,10 +2,13 @@ const AWS = require("aws-sdk");
 const IIIF = require("iiif-processor");
 const express = require("express");
 const router = express.Router();
+const sharp = require("sharp");
 const url = require("url");
 
 const s3Endpoint = process.env.S3_ENDPOINT;
 const tiffBucket = process.env.TIFF_BUCKET;
+
+const MM_600_DPI = 600 / 25.4;
 
 function s3KeyFromId(id) {
   let key = "";
@@ -78,7 +81,7 @@ function makeResource(req, res, prefix = null) {
       );
     });
   };
-  return new IIIF.Processor(params, s3Handler, dimensions);
+  return new IIIF.Processor(params, s3Handler, { dimensionFunction: dimensions, density: 600 });
 }
 
 router.use((req, res, next) => {
@@ -103,54 +106,31 @@ router.get("/", function (_req, res, _next) {
   res.status(200).send("OK");
 });
 
-router.get(
-  "/posters/:id/:region?/:size?/:rotation?/:filename?",
-  function (req, res, _next) {
-    let errorHandler = (err) => {
-      let statusCode = err.statusCode || 502;
-      res.status(statusCode).send(err.message);
-    };
+const render = (req, res, _next) => {
+  let errorHandler = (err) => {
+    let statusCode = err.statusCode || 502;
+    res.status(statusCode).send(err.message + "\n" + err.stack);
+  };
 
-    if (req.params.filename == null) {
-      req.params.filename = "info.json";
-    }
-    try {
-      makeResource(req, res, "posters")
-        .execute()
-        .then((result) => {
-          res.set("Content-Type", result.contentType);
-          res.status(200).send(result.body);
-        })
-        .catch(errorHandler);
-    } catch (err) {
-      errorHandler(err);
-    }
+  if (req.params.filename == null) {
+    req.params.filename = "info.json";
   }
-);
 
-router.get(
-  "/:id/:region?/:size?/:rotation?/:filename?",
-  function (req, res, _next) {
-    let errorHandler = (err) => {
-      let statusCode = err.statusCode || 502;
-      res.status(statusCode).send(err.message);
-    };
-
-    if (req.params.filename == null) {
-      req.params.filename = "info.json";
-    }
-    try {
-      makeResource(req, res)
-        .execute()
-        .then((result) => {
-          res.set("Content-Type", result.contentType);
-          res.status(200).send(result.body);
-        })
-        .catch(errorHandler);
-    } catch (err) {
-      errorHandler(err);
-    }
+  prefix = req.path.match(/^\/posters\//) ? "posters" : null;
+  try {
+    makeResource(req, res, prefix)
+      .execute()
+      .then((result) => {
+        res.set("Content-Type", result.contentType);
+        res.status(200).send(result.body);
+      })
+      .catch(errorHandler);
+  } catch (err) {
+    errorHandler(err);
   }
-);
+}
+
+router.get("/posters/:id/:region?/:size?/:rotation?/:filename?", render);
+router.get("/:id/:region?/:size?/:rotation?/:filename?", render);
 
 module.exports = router;
