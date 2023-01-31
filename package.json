@@ -16,7 +16,7 @@
     "lodash.isobject": "^3.0.2",
     "lodash.isstring": "^4.0.1",
     "morgan": "~1.9.0",
-    "node-fetch": "^2.6.1",
+    "node-fetch": "^2.6.7",
     "sharp": ">=0.30.5",
     "url": "^0.11.0"
   }
